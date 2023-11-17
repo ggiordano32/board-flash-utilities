@@ -16,7 +16,7 @@ chmod 755 board-flash-utilities/*
 ```
 2. Move them to the local binaries folder
 ``` sh
-cp board-flash-utilities/* /usr/local/bin/
+sudo cp board-flash-utilities/* /usr/local/bin/
 ```
 
 # Descriptions
