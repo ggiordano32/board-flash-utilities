@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Define the path to the download_phyboard_image.config file.
+# Config data strufure shown below:
+# Description,Source Path,Base Filename,Destination Path
+CONFIG_FILE="$(dirname "$0")/download_phyboard_image.config"
+
+# Prompt the user for a name to append to the filenames
+read -p "Enter a name to append to the filenames (or press Enter to keep original names): " name_append
+
+# Function to process the filename based on user input
+process_filename() {
+    local base_filename="$1"
+    local ext="$2"
+    if [[ -n "$name_append" ]]; then
+        echo "${base_filename}-${name_append}.${ext}"
+    else
+        echo "${base_filename}.${ext}"
+    fi
+}
+
+# Load description, source, base filename, and destination combinations from the config file
+mapfile -t combinations < "$CONFIG_FILE"
+
+# Prompt the user to select a combination
+echo "Please select a source-destination combination:"
+for i in "${!combinations[@]}"; do
+    IFS=',' read -ra combo <<< "${combinations[$i]}"
+    echo
+    echo "$((i+1)). Description: ${combo[0]}"
+    echo "    Source: ${combo[1]}"
+    echo "    Base Filename: ${combo[2]}"
+    echo "    Destination: ${combo[3]}"
+    echo "-----------------------------"
+done
+
+read -p "Enter the number of your choice: " choice
+IFS=',' read -ra selected_combination <<< "${combinations[$((choice-1))]}"
+
+src_path="${selected_combination[1]}"
+base_filename="${selected_combination[2]}"
+dst_path="${selected_combination[3]}"
+
+# Copy the files
+for ext in "wic.xz" "wic.bmap"; do
+    echo
+    echo "Attempting to copy from: ggiordano@strontium.phytec"
+    echo "Source Path: ${src_path}/${base_filename}."$ext""
+    echo "Destination: ${dst_path}/$(process_filename "$base_filename" "$ext")"
+
+    scp ls-strontium.phytec:${src_path}/${base_filename}."$ext" \
+    ${dst_path}/$(process_filename "$base_filename" "$ext")
+done
