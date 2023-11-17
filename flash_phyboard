@@ -1,0 +1,118 @@
+#!/bin/bash
+
+# Script Name: SD Card Flasher for PHYTEC Boards
+# Description: This script allows the user to select a bmap file and a target device to flash an SD card for PHYTEC boards.
+# Usage: Run the script and follow the on-screen prompts.
+# Assumptions:
+# - The .wic.xz file has the same name as the .bmap file but with a .xz extension.
+# - The user has the necessary permissions to read, write, and unmount the target device.
+# - bmaptool is installed and available in the system's PATH.
+
+# Define the path to the download_phyboard_image.config file
+DIRECTORIES_FILE="$(dirname "$0")/flash_directories.config"
+
+# Read directories from the config file
+mapfile -t DIRECTORIES < "$DIRECTORIES_FILE"
+
+# Allow the user to select a directory
+echo "Please select a directory to enumerate bmap files from:"
+select DIR in "${DIRECTORIES[@]}"; do
+    if [[ -n $DIR ]]; then
+        break
+    else
+        echo "Invalid selection."
+    fi
+done
+
+# 1. Enumerate the bmap files in the selected directory
+BMAP_FILES=($(find "$(eval echo $DIR)" -type f -name "*.bmap"))
+
+# 2. Allow the user to select one of the bmap files
+echo "Please select a bmap file:"
+select BMAP_FILE in "${BMAP_FILES[@]}"; do
+    if [[ -n $BMAP_FILE ]]; then
+        break
+    else
+        echo "Invalid selection."
+    fi
+done
+
+# Assuming the .wic.xz file has the same name as the .bmap file but with a different extension
+WIC_FILE="${BMAP_FILE%.bmap}.xz"
+
+# 3. Allow the user to select a /dev/sdx device to flash
+DEVICES=($(ls /dev/sd* | grep -E "/dev/sd[a-z]$"))
+MOUNTED_INFO=($(mount | grep -E "/dev/sd[a-z][0-9]" | awk '{print $1, $3}'))
+
+echo
+echo "Please select a device to flash (devices with * are mounted):"
+COUNTER=1
+for DEVICE in "${DEVICES[@]}"; do
+    # Extract mounted partitions and their mount points for the current device
+    MOUNTED_PARTITIONS_OF_DEVICE=()
+    for ((i=0; i<${#MOUNTED_INFO[@]}; i+=2)); do
+        if [[ "${MOUNTED_INFO[i]}" =~ ^${DEVICE}[0-9] ]]; then
+            MOUNTED_PARTITIONS_OF_DEVICE+=("${MOUNTED_INFO[i]}:${MOUNTED_INFO[i+1]}")
+        fi
+    done
+
+    if [[ ${#MOUNTED_PARTITIONS_OF_DEVICE[@]} -ne 0 ]]; then
+        echo "$COUNTER) $DEVICE * (Mounted: ${MOUNTED_PARTITIONS_OF_DEVICE[@]})"
+    else
+        echo "$COUNTER) $DEVICE"
+    fi
+    COUNTER=$((COUNTER+1))
+done
+
+echo
+read -p "Enter the number of the device: " SELECTION
+DEVICE=${DEVICES[$SELECTION-1]}
+
+# Check if the selected device exists
+if [[ ! -e $DEVICE ]]; then
+    echo "Error: Device $DEVICE does not exist."
+    exit 1
+fi
+
+echo
+# Safety check for flashing device
+echo "You are about to flash the image: $(basename $WIC_FILE)"
+echo "To the device: $DEVICE"
+read -p "Are you sure? (Y/n): " CONFIRMATION
+if [[ "$CONFIRMATION" != "y" && "$CONFIRMATION" != "Y" && -n "$CONFIRMATION" ]]; then
+    echo "Operation aborted by user."
+    exit 1
+fi
+
+# Check for mounted partitions of the selected device and unmount them
+MOUNTED_PARTITIONS_OF_SELECTED_DEVICE=($(mount | grep -E "${DEVICE}[0-9]" | awk '{print $1}'))
+
+if [[ ${#MOUNTED_PARTITIONS_OF_SELECTED_DEVICE[@]} -ne 0 ]]; then
+    echo "Unmounting partitions of $DEVICE..."
+    for PARTITION in "${MOUNTED_PARTITIONS_OF_SELECTED_DEVICE[@]}"; do
+        sudo umount "$PARTITION"
+        if [[ $? -ne 0 ]]; then
+            echo "Error: Failed to unmount $PARTITION. Exiting."
+            exit 1
+        fi
+    done
+    echo "All partitions of $DEVICE have been unmounted."
+fi
+
+# Execute the bmaptool command
+sudo bmaptool copy --bmap "$BMAP_FILE" "$WIC_FILE" "$DEVICE"
+
+# Check the exit status of the bmaptool command
+if [[ $? -eq 0 ]]; then
+    echo "bmaptool execution completed successfully."
+
+    # Eject the selected device
+    sudo eject "$DEVICE"
+    if [[ $? -eq 0 ]]; then
+        echo "$DEVICE has been safely ejected."
+    else
+        echo "Error: Failed to eject $DEVICE."
+    fi
+else
+    echo "Error: bmaptool execution failed."
+fi
