@@ -2,6 +2,12 @@
 These are a set of scripts to assist in downloading and flashing PHYTEC SoMs.
 The scripts have a util
 
+### Dependencies
+These scripts use bmap tools. If they are not installed they can be added with the following:
+```sh
+sudo apt update && sudo apt install bmap-tools
+```
+
 ## How to Use
 Checkout this directory
 
