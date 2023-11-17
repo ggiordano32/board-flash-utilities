@@ -9,13 +9,13 @@ sudo apt update && sudo apt install bmap-tools
 ```
 
 ## How to Use
-Checkout this directory
-
+Begin by checking out the project and then proceed with the following:
+1. Make the files executable
 ``` sh
-# make the files executable
 chmod 755 board-flash-utilities/*
-
-# move them to the local binaries folder
+```
+2. Move them to the local binaries folder
+``` sh
 cp board-flash-utilities/* /usr/local/bin/
 ```
 
