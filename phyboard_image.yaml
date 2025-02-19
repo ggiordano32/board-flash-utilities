@@ -1,0 +1,54 @@
+# phyboard_image.yaml.template
+system_config:
+  # Remote host from which to download the images
+  remote_host: "ls-strontium.phytec"
+
+  # Path to the TFTP directory
+  tftp_path: "/srv/tftp"
+
+  # Extensions for image files that will be downloaded to the destination_path
+  image_extensions:
+    - "wic.xz"
+    - "wic.bmap"
+
+  # Files that will be downloaded to the tftp_path
+  tftp_files:
+    - "u-boot.img"
+    - "tispl.bin"
+    - "tiboot3.bin"
+    - "tiboot3.bin-ethboot"
+    - "Image"
+    - "oftree"
+
+# List of available image configurations
+image_configs:
+  - description: am62x-3-PD23.2.1 -> Headless
+    source_path: /home/ggiordano/work/yocto/am62x-pd23.2.1/build/deploy/images/phyboard-lyra-am62xx-3
+    base_filename: phytec-headless-image-phyboard-lyra-am62xx-3
+    destination_path: /home/ggiordano/PHYTEC/am62x
+
+  - description: am62x-3-PD24.1.1 -> Headless
+    source_path: /home/ggiordano/work/yocto/am62x-PD24.1.1/build/deploy-ampliphy/images/phyboard-lyra-am62xx-3
+    base_filename: phytec-headless-image-phyboard-lyra-am62xx-3.rootfs
+    destination_path: /home/ggiordano/PHYTEC/am62x
+
+  - description: am62x-3-PD24.1.1 -> QT6_Demo
+    source_path: /home/ggiordano/work/yocto/am62x-PD24.1.1/build/deploy-ampliphy/images/phyboard-lyra-am62xx-3
+    base_filename: phytec-qt6demo-image-phyboard-lyra-am62xx-3.rootfs
+    destination_path: /home/ggiordano/PHYTEC/am62x
+
+  - description: am64x-PD24.1.1 -> Headless
+    source_path: /home/ggiordano/work/yocto/am64x-PD24.1.1/build/deploy-ampliphy/images/phyboard-electra-am64xx-2
+    base_filename: phytec-headless-image-phyboard-electra-am64xx-2.rootfs
+    destination_path: /home/ggiordano/PHYTEC/am64x
+
+  - description: am64x-PD24.1.y -> Mainline
+    source_path: /home/ggiordano/work/yocto/am64-mainline/build/deploy-ampliphy-linux-mainline/images/phyboard-electra-am64xx-2
+    base_filename: phytec-headless-image-phyboard-electra-am64xx-2.rootfs
+    destination_path: /home/ggiordano/PHYTEC/am64x
+
+  - description: imx7           -> Headless
+    source_path: /home/ggiordano/work/yocto/imx7/build/deploy/images/phyboard-zeta-imx7d-1
+    base_filename: phytec-headless-image-phyboard-zeta-imx7d-1
+    destination_path: /home/ggiordano/PHYTEC/imx7
+
